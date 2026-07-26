@@ -1,0 +1,4 @@
+# Placeholder directory for trained PyTorch model artifacts (.pt / .pth)
+# Artifacts:
+# - brain_mri_resnet50.pt
+# - chest_xray_resnet50.pt
