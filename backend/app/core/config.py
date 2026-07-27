@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import AnyHttpUrl, validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,6 +23,12 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000"
     ]
+
+    # Gemini AI Configuration
+    GEMINI_API_KEY: Optional[str] = None          # Set in .env — never hardcode
+    GEMINI_MODEL: str = "gemini-2.0-flash"        # Model to use for summary generation
+    GEMINI_TIMEOUT_SECONDS: int = 10              # Per-request HTTP timeout
+    GEMINI_MAX_RETRIES: int = 2                   # Retry attempts on transient errors
 
     model_config = SettingsConfigDict(
         env_file=".env",

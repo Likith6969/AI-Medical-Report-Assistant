@@ -13,6 +13,7 @@ from app.core.logging import logger
 from app.services.file_service import file_service
 from app.services.ocr_service import ocr_service
 from app.services.blood_parser import blood_parser
+from app.services.gemini_service import gemini_service
 
 router = APIRouter()
 
@@ -39,6 +40,14 @@ def analyze_blood_report(
     parameters, overall_status = blood_parser.parse_text(ocr_text)
     logger.info("parameter extraction completed")
 
+    # 4. Generate Gemini AI educational summary (non-blocking — fails gracefully)
+    logger.info("requesting Gemini AI summary")
+    ai_summary = gemini_service.generate_summary(parameters, overall_status)
+    if ai_summary:
+        logger.info("Gemini AI summary received")
+    else:
+        logger.warning("Gemini AI summary unavailable — proceeding with ai_summary=null")
+
     processing_time = round(time.time() - start_time, 2)
 
     # 4. Save report in PostgreSQL
@@ -56,7 +65,7 @@ def analyze_blood_report(
                 "ocr_text": ocr_text,
                 "parameters": {k: v.model_dump() for k, v in parameters.items()},
                 "overall_status": overall_status.model_dump(),
-                "ai_summary": None,
+                "ai_summary": ai_summary,
                 "processing_status": "COMPLETED",
                 "processing_time": processing_time
             },
@@ -82,7 +91,7 @@ def analyze_blood_report(
         ocr_text=ocr_text,
         parameters=parameters,
         overall_status=overall_status,
-        ai_summary=None,
+        ai_summary=ai_summary,
         processing_time=processing_time
     )
 
