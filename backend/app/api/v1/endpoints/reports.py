@@ -14,9 +14,12 @@ from app.services.file_service import file_service
 from app.services.ocr_service import ocr_service
 from app.services.blood_parser import blood_parser
 from app.services.gemini_service import gemini_service
+from PIL import Image
+from app.ml.brain_mri_model import BrainMRIModel
 
 router = APIRouter()
 
+brain_mri_model = BrainMRIModel()
 
 @router.post("/blood/analyze", response_model=BloodReportAnalysisResponse, status_code=status.HTTP_201_CREATED)
 def analyze_blood_report(
@@ -96,37 +99,67 @@ def analyze_blood_report(
     )
 
 
-
 @router.post("/mri/analyze", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 def analyze_brain_mri(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Uploads Brain MRI (PNG/JPG), processes via PyTorch ResNet50 classifier, and generates Grad-CAM heatmap overlay."""
-    logger.info(f"Brain MRI upload initiated by user {current_user.user_id}: {file.filename}")
-    
-    mock_report = Report(
-        user_id=current_user.user_id,
-        report_type="MRI",
-        upload_path=f"/uploads/mri/{file.filename}",
-        prediction="No Tumor",
-        confidence=0.965,
-        extracted_data={
-            "class_probabilities": {
-                "Glioma": 0.012,
-                "Meningioma": 0.015,
-                "Pituitary": 0.008,
-                "No Tumor": 0.965
-            },
-            "heatmap_path": f"/static/heatmaps/mri_{file.filename}.png"
-        },
-        explanation="Primary activations indicate standard brain tissue structure without localized tumor mass."
+    """Analyze Brain MRI using ConvNeXt Tiny model."""
+
+    logger.info(
+        f"Brain MRI upload initiated by user {current_user.user_id}: {file.filename}"
     )
-    db.add(mock_report)
-    db.commit()
-    db.refresh(mock_report)
-    return mock_report
+
+    # Validate uploaded file
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please upload a valid image file."
+        )
+
+    try:
+        # Read uploaded image
+        image = Image.open(file.file).convert("RGB")
+
+        # AI Prediction
+        result = brain_mri_model.predict(image)
+
+        # Save report
+        report = Report(
+            user_id=current_user.user_id,
+            report_type="MRI",
+            upload_path=f"/uploads/mri/{file.filename}",
+
+            prediction=result["prediction"],
+            confidence=result["confidence"],
+
+            extracted_data={
+                "class_probabilities": result["probabilities"]
+            },
+
+            explanation="Brain MRI analyzed successfully using ConvNeXt Tiny model."
+        )
+
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+
+        logger.info(
+            f"Brain MRI analyzed successfully for user {current_user.user_id}"
+        )
+
+        return report
+
+    except Exception as e:
+        logger.error(f"Brain MRI analysis failed: {str(e)}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Brain MRI analysis failed: {str(e)}"
+        )
+
+
 
 
 @router.post("/xray/analyze", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)

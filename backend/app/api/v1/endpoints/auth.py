@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -62,12 +62,17 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     logger.info(f"Registered new user: {new_user.email}")
     return new_user
 
-
 @router.post("/login", response_model=Token)
-def login_user(user_in: UserLogin, db: Session = Depends(get_db)):
+def login_user(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     """Authenticates credentials and returns a JWT Access Token."""
-    user = db.query(User).filter(User.email == user_in.email).first()
-    if not user or not verify_password(user_in.password, user.password_hash):
+
+    # We will use the username field to store the email
+    user = db.query(User).filter(User.email == form_data.username).first()
+
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password.",
@@ -75,7 +80,9 @@ def login_user(user_in: UserLogin, db: Session = Depends(get_db)):
         )
 
     access_token = create_access_token(subject=user.user_id)
+
     logger.info(f"User logged in successfully: {user.email}")
+
     return {
         "access_token": access_token,
         "token_type": "bearer",

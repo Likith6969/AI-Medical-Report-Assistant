@@ -46,7 +46,6 @@ Thumbs.db
 
 
 
-
 backend/uploads/
 uploads/
 
@@ -67,3 +66,8 @@ htmlcov/
 
 
 Desktop.ini
+
+
+ml_weights/
+*.pth
+
