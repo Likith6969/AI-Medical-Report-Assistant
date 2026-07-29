@@ -1,6 +1,6 @@
 # AI Medical Report Assistant
 
-An enterprise-grade, production-inspired AI solution designed for multimodal medical report interpretation, including Blood Test PDFs (OCR + Rule Engine), Brain MRI scans (4-class PyTorch ResNet50 classification + Grad-CAM), and Chest X-Ray scans (Binary Pneumonia detection + Grad-CAM).
+An enterprise-grade, production-inspired AI solution designed for multimodal medical report interpretation, including Blood Test PDFs (OCR + Rule Engine), Brain MRI scans (4-class PyTorch ConvNext tiny classification + Grad-CAM), and Chest X-Ray scans (Binary Pneumonia detection + Grad-CAM).
 
 > [!IMPORTANT]
 > **Educational & Non-Diagnostic Disclaimer**: This system is designed as an educational tool for academic demonstration and research. It does **not** provide medical diagnoses or prescribe treatment plans. All outputs are paired with educational disclaimers.
