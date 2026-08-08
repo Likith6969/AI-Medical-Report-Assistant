@@ -140,10 +140,119 @@ def test_multi_line_and_partial():
     print("[PASSED] Test 4 Passed!")
 
 
+def test_real_world_multiline_and_edge_cases():
+    print("\n--- Test 5: Real-World Multiline & Edge Cases Test ---")
+    ocr_text = """
+    Hemoglobin
+    10.5
+    g/dL
+    12.0 - 15.0
+
+    Hematocrit
+    42
+    %
+    36 - 52
+
+    RBC
+    5.16
+    x10^6/uL
+    4.0 - 6.1
+
+    MCV
+    66
+    fL
+    83-101
+
+    MCH
+    20
+    pg
+    27-33
+
+    MCHC
+    30.6
+    g/dL
+    32-36
+
+    Total #BC Count
+    6830
+    cells/cumm
+    4000-11000
+
+    Platelet (ount
+    160
+    x10^3/uL
+    150-450
+
+    RDW-CV
+    19.6
+    %
+    reference 11.6-14
+
+    RDW-SD
+    49
+    fL
+    39-46
+
+    MPV
+    10.6
+    fL
+    reference 7.4-10.4
+
+    Absolute Neutrophil Count
+    439.50
+    cells/cumm
+    Reference: 2000-7000
+
+    Absolute Lymphocyte Count
+    2.15
+    x10^3/uL
+    1.0-4.0
+    """
+
+    params, status = blood_parser.parse_text(ocr_text)
+
+    print(f"Extracted {len(params)} parameters from real-world multiline OCR text.")
+    print(f"Overall Status: Normal={status.normal}, High={status.high}, Low={status.low}")
+
+    # ANC Verification
+    assert "anc" in params, "Failed to extract ANC"
+    assert params["anc"].value == 0.44, f"Expected ANC value 0.44 x10^3/uL, got {params['anc'].value}"
+    assert params["anc"].status == "Low", f"Expected ANC status Low, got {params['anc'].status}"
+
+    # MCV Verification
+    assert "mcv" in params, "Failed to extract MCV"
+    assert params["mcv"].value == 66.0, f"Expected MCV 66.0, got {params['mcv'].value}"
+    assert params["mcv"].status == "Low", f"Expected MCV Low, got {params['mcv'].status}"
+
+    # WBC Verification
+    assert "wbc" in params, "Failed to extract WBC"
+    assert params["wbc"].value == 6.83, f"Expected WBC 6.83, got {params['wbc'].value}"
+    assert params["wbc"].status == "Normal", f"Expected WBC Normal, got {params['wbc'].status}"
+
+    # Platelets Verification
+    assert "platelets" in params, "Failed to extract Platelets"
+    assert params["platelets"].value == 160000.0, f"Expected Platelet 160000, got {params['platelets'].value}"
+    assert params["platelets"].status == "Normal", f"Expected Platelet Normal, got {params['platelets'].status}"
+
+    # RDW-CV Verification
+    assert "rdw_cv" in params, "Failed to extract RDW-CV"
+    assert params["rdw_cv"].value == 19.6, f"Expected RDW-CV 19.6, got {params['rdw_cv'].value}"
+    assert params["rdw_cv"].status == "High", f"Expected RDW-CV High, got {params['rdw_cv'].status}"
+
+    # MPV Verification
+    assert "mpv" in params, "Failed to extract MPV"
+    assert params["mpv"].value == 10.6, f"Expected MPV 10.6, got {params['mpv'].value}"
+    assert params["mpv"].status == "High", f"Expected MPV High, got {params['mpv'].status}"
+
+    print("[PASSED] Test 5 Passed!")
+
+
 if __name__ == "__main__":
     print("Running CBC Parser Tests...")
     test_standard_cbc_report()
     test_ocr_corrupted_report()
     test_scale_conversion()
     test_multi_line_and_partial()
+    test_real_world_multiline_and_edge_cases()
     print("\nALL CBC PARSER TESTS PASSED SUCCESSFULLY!")
+

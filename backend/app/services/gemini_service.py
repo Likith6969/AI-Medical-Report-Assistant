@@ -24,7 +24,7 @@ from app.core.logging import logger
 # ──────────────────────────────────────────────────────────────
 _GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models"
-    "/{model}:generateContent?key={api_key}"
+    "/{model}:generateContent"
 )
 
 # Status emoji for prompt readability (Gemini sees these too — improves output)
@@ -121,10 +121,14 @@ class GeminiService:
 
     def _call_gemini(self, prompt: str, api_key: str, model: str, timeout: int) -> Optional[str]:
         """
-        Makes a single HTTP request to the Gemini REST API.
+        Makes a single HTTP request to the Gemini REST API via x-goog-api-key header.
         Returns the response text or None on failure.
         """
-        url = _GEMINI_URL.format(model=model, api_key=api_key)
+        url = _GEMINI_URL.format(model=model)
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key
+        }
         payload = {
             "contents": [
                 {
@@ -137,19 +141,18 @@ class GeminiService:
                 "topP": 0.9,
             },
             "safetySettings": [
-                {
-                    "category": "HARM_CATEGORY_MEDICAL",
-                    "threshold": "BLOCK_NONE"   # We control medical scope via prompt
-                }
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
             ]
         }
 
-        response = requests.post(url, json=payload, timeout=timeout)
+        response = requests.post(url, json=payload, headers=headers, timeout=timeout)
         response.raise_for_status()
 
         data = response.json()
 
-        # Navigate Gemini response structure safely
         candidates = data.get("candidates", [])
         if not candidates:
             logger.warning("Gemini returned no candidates in response")
@@ -191,10 +194,10 @@ class GeminiService:
         """
         cfg = self._get_settings()
 
-        # ── Guard: API key missing ────────────────────────────────
-        if not cfg.GEMINI_API_KEY:
+        # ── Guard: API key missing or default placeholder ────────
+        if not cfg.GEMINI_API_KEY or cfg.GEMINI_API_KEY in ("your_gemini_api_key_here", "YOUR_GEMINI_API_KEY"):
             logger.warning(
-                "Gemini API key not configured (GEMINI_API_KEY). "
+                "Gemini API key not configured or set to placeholder. "
                 "Skipping AI summary — returning null."
             )
             return None
@@ -209,14 +212,14 @@ class GeminiService:
         timeout = cfg.GEMINI_TIMEOUT_SECONDS
         retries = cfg.GEMINI_MAX_RETRIES
 
+        last_error: Optional[Exception] = None
+
         logger.info(
-            f"Calling Gemini ({model}) for blood report summary — "
+            f"Calling Gemini API ({model}) for blood report summary — "
             f"{len(parameters)} parameters, timeout={timeout}s, max_retries={retries}"
         )
 
-        last_error: Optional[Exception] = None
-
-        for attempt in range(1, retries + 2):   # attempts = retries + initial call
+        for attempt in range(1, retries + 2):   # retries + 1 total attempts
             try:
                 summary = self._call_gemini(prompt, cfg.GEMINI_API_KEY, model, timeout)
                 if summary:
@@ -226,29 +229,48 @@ class GeminiService:
                     )
                     return summary
                 else:
-                    # Empty response — no point retrying
+                    # _call_gemini returned None (empty response) — no point retrying
                     return None
 
             except requests.Timeout as exc:
                 last_error = exc
                 logger.warning(
-                    f"Gemini request timed out (attempt {attempt}/{retries + 1}, "
-                    f"timeout={timeout}s)"
+                    f"Gemini request timed out "
+                    f"(attempt {attempt}/{retries + 1}, timeout={timeout}s)"
                 )
 
             except requests.HTTPError as exc:
                 last_error = exc
                 status_code = exc.response.status_code if exc.response is not None else "?"
+                err_msg = ""
+                if exc.response is not None:
+                    try:
+                        err_msg = exc.response.json().get("error", {}).get("message", "")
+                    except Exception:
+                        err_msg = exc.response.text[:100]
+
                 logger.warning(
-                    f"Gemini HTTP error {status_code} (attempt {attempt}/{retries + 1}): {exc}"
+                    f"Gemini HTTP error {status_code} "
+                    f"(attempt {attempt}/{retries + 1}): {err_msg or 'HTTP error'}"
                 )
-                # Do not retry on 400 (bad request) or 403 (auth) — they won't recover
-                if exc.response is not None and exc.response.status_code in (400, 403):
+
+                # API key invalid — no point retrying
+                if status_code in (400, 403) and "api key" in err_msg.lower():
+                    logger.error("Gemini API key is invalid. Aborting retries.")
+                    return None
+
+                # Quota exhausted — no point retrying within this request
+                if status_code == 429:
+                    logger.warning("Gemini quota exhausted (429). Returning ai_summary=null.")
+                    return None
+
+                # Other non-retryable client errors
+                if status_code in (400, 403, 404):
                     logger.error(
-                        f"Gemini returned non-retryable status {status_code}. "
-                        "Check API key and prompt validity."
+                        f"Gemini non-retryable error {status_code} "
+                        f"({err_msg or 'see above'}). Aborting retries."
                     )
-                    break
+                    return None
 
             except requests.ConnectionError as exc:
                 last_error = exc
@@ -262,18 +284,17 @@ class GeminiService:
                     f"Unexpected error calling Gemini (attempt {attempt}/{retries + 1}): {exc}",
                     exc_info=True
                 )
-                break   # Unexpected errors — stop immediately
+                break   # Unknown errors — stop immediately
 
-            # Exponential backoff before next retry
+            # Exponential backoff before next retry (1s, 2s)
             if attempt <= retries:
-                backoff = 2 ** (attempt - 1)   # 1s, 2s
+                backoff = 2 ** (attempt - 1)
                 logger.info(f"Retrying Gemini in {backoff}s...")
                 time.sleep(backoff)
 
         logger.warning(
-            f"Gemini AI summary unavailable after {retries + 1} attempt(s). "
-            f"Last error: {last_error}. "
-            "Returning ai_summary=null — report saved successfully."
+            f"Gemini AI summary unavailable after {retries + 1} attempt(s) with model '{model}'. "
+            f"Last error: {last_error}. Returning ai_summary=null — report saved successfully."
         )
         return None
 

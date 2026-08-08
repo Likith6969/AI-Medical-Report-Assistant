@@ -26,12 +26,12 @@ class Settings(BaseSettings):
 
     # Gemini AI Configuration
     GEMINI_API_KEY: Optional[str] = None          # Set in .env — never hardcode
-    GEMINI_MODEL: str = "gemini-2.0-flash"        # Model to use for summary generation
+    GEMINI_MODEL: str = "gemini-3.5-flash"        # Model to use for summary generation
     GEMINI_TIMEOUT_SECONDS: int = 10              # Per-request HTTP timeout
     GEMINI_MAX_RETRIES: int = 2                   # Retry attempts on transient errors
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=("backend/.env", ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"
