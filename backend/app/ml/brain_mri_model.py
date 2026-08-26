@@ -67,9 +67,6 @@ class BrainMRIModel:
 
     def predict(self, image: Image.Image):
 
-
-
-
     # Apply preprocessing
         image = brain_mri_transform(image)
 
@@ -84,9 +81,9 @@ class BrainMRIModel:
  
             confidence, predicted = torch.max(probabilities, dim=1)
 
-            predicted_class = self.class_names[predicted.item()]
+        predicted_class = self.class_names[predicted.item()]
 
-            return {
+        return {
             "prediction": predicted_class,
             "confidence": round(confidence.item() * 100, 2),
             "probabilities": {

@@ -376,20 +376,23 @@
 #         """
 #         if not line:
 #             return None
-
+#
 #         clean_l = re.sub(r"(\d+),(\d{1,2})\b", r"\1.\2", line)
-
+#
+#         # Skip reference lines to avoid mistaking reference range numbers for result values
+#         if "reference" in line.lower():
+#             return None
 #         range_match = re.search(r"\b[0-9]+\.?[0-9]*\s*(?:[\-\–\—\~]|to)\s*[0-9]+\.?[0-9]*\b", clean_l, re.IGNORECASE)
 #         range_start_pos = range_match.start() if range_match else len(clean_l)
-
+#
 #         # Match numbers, stripping trailing punctuation like commas, braces, quotes
 #         number_matches = list(re.finditer(r"\b[0-9]+\.?[0-9]*[,\}\"]?", clean_l))
 #         if not number_matches:
 #             return None
-
+#
 #         before_range_candidates: List[float] = []
 #         fallback_candidates: List[float] = []
-
+#
 #         for m in number_matches:
 #             num_raw = m.group(0).rstrip(',}"')
 #             if not num_raw:
@@ -403,40 +406,40 @@
 #                 if printed_range and (val == printed_range[0] or val == printed_range[1]):
 #                     if m.start() >= range_start_pos:
 #                         continue
-
+#
 #                 if m.start() < range_start_pos:
 #                     before_range_candidates.append(val)
 #                 else:
 #                     fallback_candidates.append(val)
 #             except ValueError:
 #                 continue
-
+#
 #         if before_range_candidates:
 #             return before_range_candidates[0]
 #         elif fallback_candidates:
 #             return fallback_candidates[0]
-
+#
 #         return None
-
+#
 #     def _match_parameter_in_line(self, line: str, config: ParameterConfig) -> Tuple[bool, str, float, str]:
 #         """
 #         Matches a single line against a parameter config using exact alias, regex, or fuzzy matching.
 #         Returns (is_match, match_type, match_confidence, matched_alias_str).
 #         """
 #         lower_line = self._clean_line_text(line)
-
+#
 #         # 1. Exact Alias Match (using boundary lookarounds)
 #         for alias in config["exact_aliases"]:
 #             pattern = r"(?<![a-zA-Z0-9])" + re.escape(alias) + r"(?![a-zA-Z0-9])"
 #             if re.search(pattern, lower_line):
 #                 return True, "exact_alias", 1.00, alias
-
+#
 #         # 2. Regex Pattern Match
 #         for pattern in config["regex_patterns"]:
 #             match = re.search(pattern, lower_line, re.IGNORECASE)
 #             if match:
 #                 return True, "regex", 0.95, match.group(0)
-
+#
 #         # 3. Fuzzy Matching using difflib
 #         words = re.findall(r"[a-zA-Z0-9\(\)\#\-\_]+", lower_line)
 #         candidates: List[str] = []
@@ -452,15 +455,15 @@
 #                 cand3 = f"{words[i]} {words[i+1]} {words[i+2]}"
 #                 if cand3 not in ALL_EXACT_ALIASES:
 #                     candidates.append(cand3)
-
+#
 #         for target in config["fuzzy_targets"]:
 #             for candidate in candidates:
 #                 ratio = difflib.SequenceMatcher(None, candidate, target).ratio()
 #                 if ratio >= 0.85:  # 85% similarity threshold
 #                     return True, "fuzzy", round(ratio, 2), candidate
-
+#
 #         return False, "none", 0.0, ""
-
+#
 #     def _line_starts_another_parameter(self, line: str, current_key: str) -> bool:
 #         """Returns True if line matches a parameter config other than current_key."""
 #         for config in self.panel_config:
@@ -469,7 +472,7 @@
 #                 if is_match:
 #                     return True
 #         return False
-
+#
 #     def evaluate_status(self, value: float, min_val: float, max_val: float) -> str:
 #         """Determines whether a value is Normal, High, or Low relative to reference range."""
 #         if value < min_val:
@@ -478,7 +481,7 @@
 #             return "High"
 #         else:
 #             return "Normal"
-
+#
 #     def parse_text(self, ocr_text: str) -> Tuple[Dict[str, ParameterDetail], OverallStatus]:
 #         """
 #         Parses raw EasyOCR text output line by line (with contextual window across lines),
@@ -487,29 +490,29 @@
 #         """
 #         extracted_internal: Dict[str, ExtractedParameterInternal] = {}
 #         extracted_params: Dict[str, ParameterDetail] = {}
-
+#
 #         normal_count = 0
 #         high_count = 0
 #         low_count = 0
 #         ignored_lines: List[str] = []
-
+#
 #         lines = [line.strip() for line in ocr_text.splitlines() if line.strip()]
 #         num_lines = len(lines)
-
+#
 #         logger.info(f"BloodReportParser started: processing {num_lines} OCR lines")
-
+#
 #         for idx, line in enumerate(lines):
 #             line_matched = False
-
+#
 #             for config in self.panel_config:
 #                 param_key = config["key"]
 #                 if param_key in extracted_internal:
 #                     continue  # Parameter already extracted
-
+#
 #                 is_match, match_type, confidence, matched_alias = self._match_parameter_in_line(line, config)
 #                 if not is_match:
 #                     continue
-
+#
 #                 # Build context window of up to 4 lines (stopping if another parameter is encountered)
 #                 context_lines = [line]
 #                 for lookahead_idx in range(idx + 1, min(idx + 4, num_lines)):
@@ -517,9 +520,9 @@
 #                     if self._line_starts_another_parameter(next_l, param_key):
 #                         break
 #                     context_lines.append(next_l)
-
+#
 #                 context_str = " ".join(context_lines)
-
+#
 #                 # 1. Extract printed reference range from context
 #                 printed_range = None
 #                 for c_line in context_lines:
@@ -528,7 +531,7 @@
 #                         break
 #                 if not printed_range:
 #                     printed_range = self._extract_printed_reference_range(context_str)
-
+#
 #                 # 2. Extract numeric value from context
 #                 val = None
 #                 for c_line in context_lines:
@@ -537,23 +540,23 @@
 #                         break
 #                 if val is None:
 #                     val = self._extract_numeric_value(context_str, printed_range)
-
+#
 #                 if val is None:
 #                     continue
-
+#
 #                 line_matched = True
-
+#
 #                 unit = self._extract_unit(context_str, config["default_unit"])
-
+#
 #                 # Determine reference range and apply scale conversions
 #                 ref_min = config["default_min"]
 #                 ref_max = config["default_max"]
 #                 ref_source = "hardcoded_fallback"
-
+#
 #                 if printed_range:
 #                     ref_min, ref_max = printed_range
 #                     ref_source = "printed_report"
-
+#
 #                 # Scale Normalization Logic
 #                 if param_key in ("wbc", "anc", "alc", "amc", "aec", "abc"):
 #                     is_in_thousands = False
@@ -563,7 +566,7 @@
 #                         is_in_thousands = True
 #                     elif val > 100 and not re.search(r"10\^?[36]|k\/", unit.lower()):
 #                         is_in_thousands = True
-
+#
 #                     if is_in_thousands:
 #                         if printed_range and ref_max > 100:
 #                             ref_min = round(ref_min / 1000.0, 2)
@@ -571,13 +574,6 @@
 #                         val = round(val / 1000.0, 2)
 #                         unit = "x10^3/uL"
 #                 elif param_key == "platelets":
-#                     if printed_range and ref_max <= 1000:
-#                         ref_min = ref_min * 1000.0
-#                         ref_max = ref_max * 1000.0
-#                     if val < 1000:
-#                         val = val * 1000.0
-#                     elif val < 25:
-#                         val = val * 100000.0
 #                     unit = "/uL"
 #                 elif param_key == "rbc":
 #                     if printed_range and ref_max > 100:
@@ -997,6 +993,10 @@ class BloodReportParser:
           12.0 - 15.5
           12-15
           4.0 to 11.0
+          40)-Xu (40-80)
+          20+40 (20-40)
+          1,50-,14 (1.50-4.14)
+          36.0-6.0 (36.0-46.0)
 
         Also handles OCR comma decimals.
         """
@@ -1005,13 +1005,13 @@ class BloodReportParser:
 
         clean_l = self._normalize_numbers(line)
 
-        # Normal hyphen/en-dash/em-dash/tilde or "to".
+        # Standard range pattern: 12.0 - 15.5, 40-80, 4.0 to 11.0, 20+40, 1.50-.14
         range_match = re.search(
             r"(?<!\d)"
             r"([0-9]+(?:\.[0-9]+)?)"
-            r"\s*(?:-|–|—|~|\bto\b)"
+            r"\s*(?:-|–|—|~|\bto\b|\+)"
             r"\s*"
-            r"([0-9]+(?:\.[0-9]+)?)"
+            r"(?:[0-9]*\.[0-9]+|[0-9]+)"
             r"(?!\d)",
             clean_l,
             re.IGNORECASE,
@@ -1020,9 +1020,24 @@ class BloodReportParser:
         if range_match:
             try:
                 lo = float(range_match.group(1))
-                hi = float(range_match.group(2))
+                hi_str = re.search(r"(?:[0-9]*\.[0-9]+|[0-9]+)$", range_match.group(0))
+                hi = float(hi_str.group(0)) if hi_str else lo
                 if lo <= hi:
                     return lo, hi
+                else:
+                    return hi, lo
+            except ValueError:
+                pass
+
+        # OCR-corrupted range patterns like 40)-Xu where upper bound was OCR-corrupted
+        corrupted_range = re.search(
+            r"\b([0-9]+(?:\.[0-9]+)?)\s*[\)\]\}]?\s*[-–—~+]\s*[A-Za-z0-9]+",
+            clean_l,
+        )
+        if corrupted_range:
+            try:
+                lo = float(corrupted_range.group(1))
+                return lo, lo
             except ValueError:
                 pass
 
@@ -1054,13 +1069,22 @@ class BloodReportParser:
         """
         Return numeric tokens as:
             (value, start, end, raw_text)
+        Masks out scientific notation multipliers (like 10^3, 10^6) to avoid false number tokens.
         """
         clean = self._normalize_numbers(text)
+
+        # Mask scientific multipliers like 10^3, 10^6, 10³, 10⁶, x10^3, x10^6
+        masked = re.sub(
+            r"(?i)\b[xX]?10\s*[\^*/]?\s*[36]\b|10\s*[³⁶]",
+            lambda m: " " * len(m.group(0)),
+            clean,
+        )
+
         tokens: List[Tuple[float, int, int, str]] = []
 
-        # Decimal or integer. Avoid matching a number that is part of 10^3 etc.
+        # Decimal or integer.
         for m in re.finditer(
-            r"(?<![A-Za-z0-9])\d+(?:\.\d+)?(?![A-Za-z0-9])", clean
+            r"(?<![A-Za-z0-9])\d+(?:\.\d+)?(?![A-Za-z0-9])", masked
         ):
             raw = m.group(0)
             try:
@@ -1109,18 +1133,6 @@ class BloodReportParser:
     ) -> Optional[float]:
         """
         Extract the patient's value from one OCR line.
-
-        The old implementation simply returned the first number before a
-        reference range. That can fail when OCR puts the reference limits
-        before/after the result or when the parameter name is on one line
-        and the numbers are on the next line.
-
-        This implementation scores candidates using:
-          - position after parameter name
-          - position immediately before a unit
-          - exclusion from the printed reference range
-          - proximity to the parameter name
-          - plausibility against the parameter's default range
         """
         if not line:
             return None
@@ -1130,28 +1142,26 @@ class BloodReportParser:
         if not tokens:
             return None
 
-        # Locate printed range and exclude its two numeric tokens.
-        range_span: Optional[Tuple[int, int]] = None
-        range_match = re.search(
-            r"(?<!\d)"
-            r"[0-9]+(?:\.[0-9]+)?"
-            r"\s*(?:-|–|—|~|\bto\b)"
-            r"\s*"
-            r"[0-9]+(?:\.[0-9]+)?"
-            r"(?!\d)",
+        # Check if line is purely a reference header/reference-only line
+        lower_line = clean.lower()
+        if any(kw in lower_line for kw in ("reference", "biological", "interval", "biological reference", "ref.")):
+            param_span = self._find_parameter_span(clean, config)
+            if not param_span:
+                return None
+
+        # Locate printed range spans to exclude reference range numbers
+        range_spans: List[Tuple[int, int]] = []
+        for rm in re.finditer(
+            r"(?<!\d)[0-9]+(?:\.[0-9]+)?\s*(?:-|–|—|~|\bto\b|\+)\s*(?:[0-9]*\.[0-9]+|[0-9]+)(?!\d)|\b[0-9]+(?:\.[0-9]+)?\s*[\)\]\}]?\s*[-–—~+]\s*[A-Za-z0-9]+",
             clean,
             re.IGNORECASE,
-        )
-        if range_match:
-            range_span = (range_match.start(), range_match.end())
+        ):
+            range_spans.append((rm.start(), rm.end()))
 
         param_span = self._find_parameter_span(clean, config)
         param_end = param_span[1] if param_span else -1
 
-        unit = self._extract_unit(clean, config["default_unit"])
         unit_positions: List[int] = []
-
-        # Prefer the numeric token immediately before a unit.
         unit_patterns = [
             r"%",
             r"\b(?:lakhs|lacs|lakh)\b",
@@ -1166,26 +1176,36 @@ class BloodReportParser:
 
         candidates = []
         for value, start, end, raw in tokens:
-            # Never select numbers belonging to the printed reference range.
-            if range_span and range_span[0] <= start < range_span[1]:
+            # Never select numbers belonging to the printed reference range
+            in_range = any(
+                r_start <= start < r_end or r_start < end <= r_end
+                for r_start, r_end in range_spans
+            )
+            if in_range:
                 continue
 
-            # The result should normally occur after the parameter label.
+            # If printed range is known and this value matches printed range bounds on a line without unit
+            if printed_range and (value == printed_range[0] or value == printed_range[1]):
+                if not any(0 <= u - end <= 8 for u in unit_positions):
+                    continue
+
+            # For percentage parameters, reject impossible percentage values (> 100% or < 0%)
+            if config["default_unit"] == "%" and not (0.0 <= value <= 100.0):
+                continue
+
+            # If hematocrit context lacks '%' and is adjacent to an invalid/corrupted range (e.g. 36.0-6.0), reject
+            if config["key"] == "hematocrit" and "%" not in clean:
+                if any(rm in clean for rm in ("36", "46", "36.0")):
+                    continue
+
             after_parameter = param_span is None or start >= param_end
 
-            # Distance from parameter name.
             if param_span:
                 distance = start - param_end
             else:
                 distance = start
 
-            # Is this number immediately before a recognized unit?
             before_unit = any(0 <= u - end <= 8 for u in unit_positions)
-
-            # Plausibility score.
-            default_min = config["default_min"]
-            default_max = config["default_max"]
-            plausible = default_min <= value <= default_max
 
             score = 0.0
 
@@ -1197,15 +1217,7 @@ class BloodReportParser:
             if before_unit:
                 score += 7.0
 
-            if plausible:
-                score += 3.0
-
-            # Prefer a value close to the parameter label.
             score += max(0.0, 3.0 - min(distance, 30) / 10.0)
-
-            # For percentage parameters, reject obviously impossible values.
-            if config["default_unit"] == "%" and not (0 <= value <= 100):
-                score -= 8.0
 
             candidates.append((score, value, start))
 
@@ -1318,7 +1330,9 @@ class BloodReportParser:
 
         WBC/differential absolute counts:
           7500 /uL       -> 7.5 x10^3/uL
-          4.5 x10^3/uL   -> 4.5 x10^3/uL
+          6830 /cumm     -> 6.83 x10^3/uL
+          439.50 /cumm   -> 0.44 x10^3/uL
+          2147.30 /cumm  -> 2.15 x10^3/uL
 
         RBC:
           5.0 x10^6/uL   -> 5.0 x10^6/uL
@@ -1327,19 +1341,22 @@ class BloodReportParser:
         unit_l = unit.lower()
 
         if param_key == "platelets":
-            # Printed ranges such as 1.50-4.10 are usually lakhs/cmm.
-            if ref_max < 1000:
+            # Printed ranges such as 1.50-4.10 are lakhs/cmm; 150-450 are x10^3/uL.
+            if ref_max <= 20.0:
                 ref_min *= 100000.0
                 ref_max *= 100000.0
+            elif 20.0 < ref_max < 1000.0:
+                ref_min *= 1000.0
+                ref_max *= 1000.0
 
             if "lakh" in unit_l or "lac" in unit_l:
                 value *= 100000.0
             elif "10^5" in unit_l or "10⁵" in unit_l:
                 value *= 100000.0
-            elif value < 1000:
-                # Keep compatibility with reports that print platelets
-                # as 3.47 without explicitly printing "lakhs".
+            elif value <= 20.0:
                 value *= 100000.0
+            elif "10^3" in unit_l or "k" in unit_l or (20.0 < value < 1000.0):
+                value *= 1000.0
 
             return (
                 round(value, 2),
@@ -1358,7 +1375,7 @@ class BloodReportParser:
                 "10^3" not in unit_l
                 and "10³" not in unit_l
                 and value > 100
-            ):
+            ) or value > 100:
                 value /= 1000.0
 
             return (
@@ -1377,7 +1394,7 @@ class BloodReportParser:
                 "10^6" not in unit_l
                 and "10⁶" not in unit_l
                 and value > 100
-            ):
+            ) or value > 100:
                 value /= 1000000.0
 
             return (
@@ -1466,37 +1483,10 @@ class BloodReportParser:
 
                         context_lines.append(next_line)
 
-                        if printed_range is None:
-                            printed_range = (
-                                self._extract_printed_reference_range(
-                                    next_line
-                                )
-                            )
-
-                        # Do not let a reference-only line become the result.
-                        next_has_range = (
-                            self._extract_printed_reference_range(
-                                next_line
-                            )
-                            is not None
-                        )
-
-                        if not next_has_range:
-                            val = self._extract_numeric_value(
-                                next_line, printed_range, config
-                            )
-
-                        if val is not None:
-                            break
-
-                if val is None:
                     context_str = " ".join(context_lines)
-
                     if printed_range is None:
-                        printed_range = (
-                            self._extract_printed_reference_range(
-                                context_str
-                            )
+                        printed_range = self._extract_printed_reference_range(
+                            context_str
                         )
 
                     val = self._extract_numeric_value(

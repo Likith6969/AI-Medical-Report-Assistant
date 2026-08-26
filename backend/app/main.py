@@ -6,6 +6,7 @@ from app.core.logging import logger
 from app.core.database import Base, engine
 from app.api.v1.router import api_router
 
+
 # Import models to ensure they are registered with Base metadata
 import app.models  # noqa: F401
 
@@ -48,3 +49,9 @@ def health_check():
         "project": settings.PROJECT_NAME,
         "version": settings.VERSION
     }
+
+
+
+
+
+
