@@ -211,17 +211,17 @@ Medical disclaimer
 The FastAPI backend provides REST APIs with interactive Swagger/OpenAPI documentation.
 
 screenshots:
-
-<img width="1920" height="1080" alt="Screenshot (220)" src="https://github.com/user-attachments/assets/9123309d-def5-48b0-bea2-4b0e5308f2bd" />
-
+<img width="1920" height="1080" alt="Screenshot (220)" src="https://github.com/user-attachments/assets/2d616618-df9f-45bb-8fc3-863446dffd65" />
 
 
-
-<img width="1920" height="1080" alt="Screenshot (221)" src="https://github.com/user-attachments/assets/5831390b-26c1-4e7f-b488-49dc28b19e6c" />
-
+<img width="1920" height="1080" alt="Screenshot (221)" src="https://github.com/user-attachments/assets/41627d8b-8c22-4182-88b4-099d9bc82197" />
 
 
-<img width="1920" height="1080" alt="Screenshot (224)" src="https://github.com/user-attachments/assets/b6dd1637-e71c-47c0-a2f9-1c432453d4b6" />
+<img width="1920" height="1080" alt="Screenshot (224)" src="https://github.com/user-attachments/assets/2b746450-d598-4c14-8889-9e6382b5cd6f" />
+
+
+
+
 
 
 
