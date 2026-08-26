@@ -211,13 +211,19 @@ Medical disclaimer
 The FastAPI backend provides REST APIs with interactive Swagger/OpenAPI documentation.
 
 screenshots:
-<img width="1920" height="1080" alt="Screenshot (220)" src="https://github.com/user-attachments/assets/2d616618-df9f-45bb-8fc3-863446dffd65" />
+## 🖥️ Screenshots
 
+### 🔐 Login Page
 
-<img width="1920" height="1080" alt="Screenshot (221)" src="https://github.com/user-attachments/assets/41627d8b-8c22-4182-88b4-099d9bc82197" />
+<img width="900" alt="Login Page" src="https://github.com/user-attachments/assets/2d616618-df9f-45bb-8fc3-863446dffd65" />
 
+### 🏠 Dashboard
 
-<img width="1920" height="1080" alt="Screenshot (224)" src="https://github.com/user-attachments/assets/2b746450-d598-4c14-8889-9e6382b5cd6f" />
+<img width="900" alt="Dashboard" src="https://github.com/user-attachments/assets/41627d8b-8c22-4182-88b4-099d9bc82197" />
+
+### 🩸 Blood Report Analyzer
+
+<img width="900" alt="Blood Report Analyzer" src="https://github.com/user-attachments/assets/2b746450-d598-4c14-8889-9e6382b5cd6f" />
 
 
 
