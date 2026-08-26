@@ -161,7 +161,7 @@ Protected backend endpoints
 Protected React routes
 Automatic Authorization header handling
 Logout functionality
-
+```
 
 🌐 Frontend Application
 
@@ -211,7 +211,15 @@ Medical disclaimer
 The FastAPI backend provides REST APIs with interactive Swagger/OpenAPI documentation.
 
 
+## 🖥️ Screenshots
 
+<img width="1920" height="860" alt="Screenshot (220)" src="https://github.com/user-attachments/assets/7154010d-ea36-4f0d-a588-b14b1ffd89e0" />
+
+
+<img width="1920" height="887" alt="Screenshot (221)" src="https://github.com/user-attachments/assets/d14f9fbe-8b5d-44fa-8732-2fcb62307f38" />
+
+
+<img width="1920" height="875" alt="Screenshot (224)" src="https://github.com/user-attachments/assets/5b60b17f-7479-4f5d-9ef2-202cad63e25d" />
 
 
 
