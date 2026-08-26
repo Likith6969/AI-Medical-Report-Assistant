@@ -1,103 +1,217 @@
-# AI Medical Report Assistant
+# AI Medical Report Assistant 
+ 
+An enterprise-grade, production-inspired AI solution designed for multimodal medical report analysis, currently supporting **Blood Report Analysis** and **Brain MRI Classification**, with AI-powered educational interpretation. 
+ 
+The platform combines OCR, rule-based medical parameter extraction, deep learning, generative AI, secure authentication, a PostgreSQL database, and a modern React frontend. 
+ 
+> [!IMPORTANT] 
+> **Educational & Non-Diagnostic Disclaimer**: This system is designed as an educational tool for academic demonstration and research. It does **not** provide medical diagnoses or prescribe treatment plans. All outputs are paired with educational disclaimers and should be reviewed by qualified healthcare professionals. 
+ 
+--- 
+ 
+## 🌟 Tech Stack Overview 
+ 
+* **Frontend**: React, Vite, Tailwind CSS, Axios, React Router. 
+* **Backend**: FastAPI, Python 3.11+, SQLAlchemy, Pydantic, PostgreSQL, JWT Authentication. 
+* **AI & Machine Learning**: PyTorch, torchvision, ConvNeXt Tiny, EasyOCR, Google Gemini API. 
+* **Computer Vision**: MRI image preprocessing, deep-learning image classification, OCR-based medical report processing. 
+* **Database**: PostgreSQL with SQLAlchemy ORM. 
+* **API Documentation**: FastAPI Swagger / OpenAPI. 
+* **Version Control**: Git, GitHub. 
+ 
+--- 
+ 
+## 📁 Repository Structure 
+ 
+```text
+AI-Medical-Report-Assistant/ 
+├── backend/                       # FastAPI Application Server 
+│   ├── app/ 
+│   │   ├── api/                  # REST API Routers & Endpoints 
+│   │   ├── core/                 # Configuration, Security & Database 
+│   │   ├── models/               # SQLAlchemy Database Models 
+│   │   ├── schemas/              # Pydantic Request/Response Schemas 
+│   │   ├── services/             # OCR, Blood Parser & AI Services 
+│   │   └── ml/                   # Machine Learning Model Integration 
+│   │ 
+│   ├── ml_weights/ 
+│   │   └── brain_mri/            # Brain MRI Model Weights 
+│   │ 
+│   ├── uploads/                  # Uploaded Report Files 
+│   ├── requirements.txt 
+│   └── .env.example 
+│ 
+├── frontend/                     # React + Vite Single Page Application 
+│   ├── src/ 
+│   │   ├── components/           # Reusable UI Components 
+│   │   ├── context/              # Authentication & Global Context 
+│   │   ├── pages/                # Application Pages 
+│   │   └── services/             # Axios API Client & Endpoints 
+│   │ 
+│   ├── package.json 
+│   └── vite.config.js 
+│ 
+└── README.md
 
-An enterprise-grade, production-inspired AI solution designed for multimodal medical report interpretation, including Blood Test PDFs (OCR + Rule Engine), Brain MRI scans (4-class PyTorch ConvNext tiny classification + Grad-CAM), and Chest X-Ray scans (Binary Pneumonia detection + Grad-CAM).
 
-> [!IMPORTANT]
-> **Educational & Non-Diagnostic Disclaimer**: This system is designed as an educational tool for academic demonstration and research. It does **not** provide medical diagnoses or prescribe treatment plans. All outputs are paired with educational disclaimers.
+🚀 Currently Implemented Modules
+1.🩸 Blood Report Analyzer
 
----
+The Blood Report Analyzer processes CBC (Complete Blood Count) reports using EasyOCR and a specialized rule-based parsing engine.
+Blood Report
+     │
+     ▼
+ File Upload
+     │
+     ▼
+   EasyOCR
+     │
+     ▼
+  OCR Text
+     │
+     ▼
+ CBC Parser
+     │
+     ├── OCR Error Handling
+     ├── Parameter Detection
+     ├── Multiline Extraction
+     ├── Unit Normalization
+     ├── Scale Conversion
+     └── Reference Range Detection
+     │
+     ▼
+Normal / High / Low
+     │
+     ▼
+  Gemini API
+     │
+     ▼
+Educational AI Summary
 
-## 🌟 Tech Stack Overview
 
-* **Frontend**: React 18, Vite, Tailwind CSS, Axios, React Router v6, Chart.js / React-Chartjs-2, Lucide Icons.
-* **Backend**: FastAPI (Python 3.11+), SQLAlchemy 2.0 ORM, Pydantic v2, PostgreSQL, Alembic, PyJWT, Passlib (Bcrypt).
-* **AI & Machine Learning**: PyTorch, torchvision, EasyOCR, pdfplumber, Grad-CAM.
-* **DevOps**: Docker, Docker Compose.
+2.🧠 Brain MRI Classifier
 
----
+The Brain MRI module uses a fine-tuned ConvNeXt Tiny deep learning model to classify brain MRI scans into four categories.
+Brain MRI
+    │
+    ▼
+ File Upload
+    │
+    ▼
+Image Preprocessing
+    │
+    ▼
+ ConvNeXt Tiny
+    │
+    ├── Glioma
+    ├── Meningioma
+    ├── Pituitary Tumor
+    └── No Tumor
+    │
+    ▼
+Prediction + Confidence
+    │
+    ▼
+Class Probability Distribution
+    │
+    ▼
+ Gemini API
+    │
+    ▼
+Educational AI Interpretation
+🤖 Generative AI Interpretation
 
-## 📁 Repository Structure
+The system integrates the Google Gemini API to generate educational summaries from structured analysis results.
 
-```
-ai-medical-report-assistant/
-├── backend/                  # FastAPI Application Server
-│   ├── app/
-│   │   ├── api/v1/          # REST Endpoint Routers & Handlers
-│   │   ├── core/            # Config, Security, DB Connection & Logging
-│   │   ├── models/          # SQLAlchemy ORM Models (Users, Reports, ChatHistory)
-│   │   ├── schemas/         # Pydantic Request/Response DTOs
-│   │   ├── services/        # OCR, ML Inferences, Rule Engine & Health Assistant
-│   │   └── ml_weights/      # Pretrained PyTorch .pt Model Artifacts
-│   ├── alembic/             # Database Migration Scripts
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/                 # React 18 + Vite Single Page Application
-│   ├── src/
-│   │   ├── components/      # Modular UI Components & Layouts
-│   │   ├── context/         # Auth & Global Context Providers
-│   │   ├── pages/           # Application Router Views
-│   │   └── services/        # Axios API Client Interceptors & Endpoints
-│   ├── Dockerfile
-│   └── package.json
-├── training/                 # Offline PyTorch Training Pipelines
-│   ├── brain_mri/           # 4-Class Brain MRI Training Scripts
-│   ├── chest_xray/          # Binary Chest X-Ray Training Scripts
-│   └── blood_parser/        # Biomarker Standard Reference Datasets
-├── datasets/                 # Local Training & Validation Image Datasets
-├── evaluation/               # Model Evaluation Suite (Confusion Matrix, Metrics, Plots)
-└── docker-compose.yml        # Orchestration Blueprint
-```
+Blood Reports
 
----
+Gemini receives:
 
-## 🚀 Quick Start Guide
+Extracted CBC parameters
+Normal / High / Low classifications
+Reference ranges
+Overall abnormality information
+Brain MRI
 
-### Prerequisites
-* Python 3.11+
-* Node.js 18+ & npm
-* PostgreSQL 15+ (or Docker)
+Gemini receives:
 
-### 1. Backend Setup
-```bash
-cd backend
+Predicted class
+Model confidence
+Class probability distribution
+Classification context
 
-# Create virtual environment
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
+The generated output is designed to:
 
-# Install dependencies
-pip install -r requirements.txt
+Explain results in understandable language
+Highlight abnormal findings
+Provide educational context
+Summarize the analysis
+Maintain a non-diagnostic medical boundary
 
-# Configure Environment
-cp .env.example .env
+🔐 Authentication
 
-# Run Database Migrations
-alembic upgrade head
+The application implements secure user authentication using JWT.
 
-# Start FastAPI Dev Server
-uvicorn app.main:app --reload --port 8000
-```
-Backend API interactive documentation available at: `http://localhost:8000/docs`
+The authentication system provides:
 
-### 2. Frontend Setup
-```bash
-cd frontend
+User registration
+User login
+JWT access tokens
+Protected backend endpoints
+Protected React routes
+Automatic Authorization header handling
+Logout functionality
+🌐 Frontend Application
 
-# Install dependencies
-npm install
+The frontend is built using React + Vite and provides a modern clinical dashboard for interacting with the medical analysis modules.
 
-# Start Vite Dev Server
-npm run dev
-```
-Frontend Web UI available at: `http://localhost:5173`
+Current Pages
+/login
+/register
+/dashboard
+/blood-report
+/brain-mri
+Dashboard
 
----
+The dashboard provides access to:
 
-## 🐳 Docker Deployment
-To launch PostgreSQL, FastAPI Backend, and React Frontend simultaneously via Docker Compose:
-```bash
-docker-compose up --build
-```
+🩸 Blood Report Analyzer
+🧠 Brain MRI Classifier
+Blood Report Interface
+
+The Blood Report Analyzer interface includes:
+
+Drag-and-drop upload
+File validation
+Upload progress
+OCR processing status
+CBC parsing status
+AI interpretation status
+Biomarker table
+Reference ranges
+Normal / High / Low indicators
+Processing information
+AI interpretation panel
+Brain MRI Interface
+
+The Brain MRI Classifier interface includes:
+
+Drag-and-drop MRI upload
+MRI image preview
+Processing progress
+Prediction result
+Confidence percentage
+Class probability visualization
+AI interpretation panel
+Medical disclaimer
+🔌 REST API
+
+The FastAPI backend provides REST APIs with interactive Swagger/OpenAPI documentation.
+
+
+
+
+
+
+
+
