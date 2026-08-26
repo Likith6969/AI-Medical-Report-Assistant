@@ -161,6 +161,8 @@ Protected backend endpoints
 Protected React routes
 Automatic Authorization header handling
 Logout functionality
+
+
 🌐 Frontend Application
 
 The frontend is built using React + Vite and provides a modern clinical dashboard for interacting with the medical analysis modules.
@@ -207,6 +209,23 @@ Medical disclaimer
 🔌 REST API
 
 The FastAPI backend provides REST APIs with interactive Swagger/OpenAPI documentation.
+
+screenshots:
+
+<img width="1920" height="1080" alt="Screenshot (220)" src="https://github.com/user-attachments/assets/9123309d-def5-48b0-bea2-4b0e5308f2bd" />
+
+
+
+
+<img width="1920" height="1080" alt="Screenshot (221)" src="https://github.com/user-attachments/assets/5831390b-26c1-4e7f-b488-49dc28b19e6c" />
+
+
+
+<img width="1920" height="1080" alt="Screenshot (224)" src="https://github.com/user-attachments/assets/b6dd1637-e71c-47c0-a2f9-1c432453d4b6" />
+
+
+
+
 
 
 
